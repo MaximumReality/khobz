@@ -61,9 +61,48 @@
             ctx.fillStyle = "#00f3ff";
             ctx.font = "20px Courier New";
             ctx.fillText(`LENTIL SCORE: ${gameState.score}`, 20, 30);
+        
 
             requestAnimationFrame(draw);
         }
+        let obstacles = [];
+
+function spawnObstacle() {
+    const types = [
+        { label: "🥖", type: "khobz", color: "#f3e5ab" },
+        { label: "💔", type: "spam", color: "#ff0077" }, // The Valentine Spam!
+        { label: "📧", type: "ssa_form", color: "#00f3ff" },
+        { label: "⭐️", type: "michelin_star", color: "#ffff00" },
+        { label: "👻", type: "macy_ghost", color: "#ffffff" },
+        { label: "💊", type: "spam_capsule", color: "#ff0000" }
+    ];
+    
+    const choice = types[Math.floor(Math.random() * types.length)];
+    
+    obstacles.push({
+        x: Math.random() * (canvas.width - 20),
+        y: -30,
+        speed: 2 + Math.random() * 3,
+        ...choice
+    });
+}
+
+// Add this to your Draw loop to move them
+function updateObstacles() {
+    obstacles.forEach((ob, index) => {
+        ob.y += ob.speed;
+        
+        // Draw the icon
+        ctx.font = "30px serif";
+        ctx.fillText(ob.label, ob.x, ob.y);
+
+        // Remove if off screen
+        if (ob.y > canvas.height) {
+            obstacles.splice(index, 1);
+        }
+    });
+}
+
 
         // Touch Interaction (Drag Mochkil)
         canvas.addEventListener('touchmove', (e) => {

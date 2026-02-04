@@ -7,16 +7,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>The Bureaucracy Heist</title>
     <style>
-        :root { --neon: #00f3ff; --danger: #ff0055; }
+        :root { --neon: #00f3ff; --danger: #ff0055; --matrix: #00ff41; }
         body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100dvh; font-family: 'Courier New', monospace; }
         
-        /* The Fix: Canvas must fill the viewport without stretching */
         canvas { display: block; width: 100vw; height: 100dvh; touch-action: none; }
 
         #ui, .overlay, #game-controls { position: absolute; width: 100%; box-sizing: border-box; z-index: 10; pointer-events: none; }
         #ui { top: 40px; left: 0; display: flex; justify-content: space-between; padding: 0 20px; }
         .stat { color: var(--neon); font-weight: bold; font-size: 18px; text-shadow: 0 0 5px #000; }
         
+        /* Power-Up Timer Bar */
+        #azul-timer-container {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 6px; background: rgba(255,255,255,0.1);
+            border-radius: 3px; visibility: hidden; pointer-events: none;
+        }
+        #azul-timer-fill { height: 100%; width: 100%; background: var(--matrix); box-shadow: 0 0 10px var(--matrix); }
+
         #game-controls { bottom: 30px; right: 20px; display: flex; gap: 10px; width: auto; pointer-events: auto; }
         .ctrl-btn { background: rgba(0,0,0,0.8); border: 1px solid var(--neon); color: var(--neon); padding: 12px; border-radius: 8px; font-size: 20px; }
 
@@ -25,9 +32,11 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 20px; pointer-events: auto; z-index: 100;
         }
-        .start-btn { background: var(--neon); color: #000; border: none; padding: 15px 40px; font-weight: bold; font-size: 22px; border-radius: 5px; }
-        h1 { color: var(--neon); margin: 0 0 10px 0; }
-        p { color: #ccc; max-width: 300px; line-height: 1.4; }
+        .start-btn { background: var(--neon); color: #000; border: none; padding: 15px 40px; font-weight: bold; font-size: 22px; border-radius: 5px; cursor: pointer; }
+        h1 { color: var(--neon); margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .story { color: #ccc; max-width: 320px; line-height: 1.5; font-size: 14px; margin: 20px 0; }
+        .home-link { color: var(--neon); text-decoration: none; font-size: 12px; margin-top: 25px; opacity: 0.6; border-bottom: 1px solid transparent; }
+        .home-link:hover { border-bottom: 1px solid var(--neon); }
     </style>
 </head>
 <body>
@@ -35,6 +44,10 @@
     <div id="ui">
         <div class="stat">SCORE: <span id="score">0</span></div>
         <div class="stat">BEST: <span id="high-score">0</span></div>
+    </div>
+
+    <div id="azul-timer-container">
+        <div id="azul-timer-fill"></div>
     </div>
 
     <div id="game-controls">
@@ -45,9 +58,13 @@
 
     <div id="overlay" class="overlay">
         <h1>THE HEIST</h1>
-        <p>Lqliâa 2026. Catch 🥖 & 📧. <br>Avoid 💊. <br>Find <b>Azul</b> to hack time.</p>
-        <br>
-        <button class="start-btn" onclick="startGame()">START</button>
+        <p class="story">
+            Lqliâa 2026. <br>
+            Woodlawn has verified the signal. The documents are "In Good Condition." <br><br>
+            Survive the 💊 noise. Find <b>Azul</b> to hack the mainframe.
+        </p>
+        <button class="start-btn" onclick="startGame()">INITIATE</button>
+        <a href="https://maximumreality.xyz" class="home-link">RETURN TO HQ</a>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -57,13 +74,13 @@
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
         const highScoreElement = document.getElementById('high-score');
+        const azulBar = document.getElementById('azul-timer-fill');
+        const azulContainer = document.getElementById('azul-timer-container');
 
         // Assets
         const bg = new Image(); bg.src = 'cyberpunk_city_bg.JPG';
         const sprites = {};
-        const frameNames = ['stand', 'stand_west', 'stand_east', 'reach', 'azul'];
-        
-        frameNames.forEach(name => {
+        ['stand', 'stand_west', 'stand_east', 'reach', 'azul'].forEach(name => {
             sprites[name] = new Image();
             sprites[name].src = (name === 'azul') ? 'helper-azul.png' : `lori_${name}.png`;
         });
@@ -75,9 +92,28 @@
             spam: new Audio('error.mp3')
         };
 
+        // Optimized Particle System
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 10;
+                this.speedY = (Math.random() - 0.5) * 10;
+                this.color = color;
+                this.alpha = 1;
+            }
+            update() { this.x += this.speedX; this.y += this.speedY; this.alpha -= 0.03; }
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                ctx.globalAlpha = 1;
+            }
+        }
+
         let gameState = {
             mode: 'menu',
-            player: { x: 0, y: 0, width: 80, height: 120 },
+            player: { x: 0, y: 0 },
             score: 0,
             highScore: localStorage.getItem('maxReality_highScore') || 0,
             difficulty: 1,
@@ -88,8 +124,8 @@
         };
 
         let obstacles = [], particles = [], startTime = 0;
+        highScoreElement.innerText = gameState.highScore;
 
-        // FIXED RESIZE LOGIC
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -102,10 +138,8 @@
         function startGame() {
             document.getElementById('overlay').style.display = 'none';
             gameState.mode = 'playing';
-            gameState.score = 0;
             startTime = Date.now();
-            // Unlock Audio for Safari
-            Object.values(sounds).forEach(s => { s.play().then(()=>s.pause()).catch(()=>{} )});
+            Object.values(sounds).forEach(s => { s.play().then(()=>s.pause()).catch(()=>{})});
             setInterval(spawn, 1000);
             requestAnimationFrame(loop);
         }
@@ -113,97 +147,94 @@
         function spawn() {
             if (gameState.mode !== 'playing' || gameState.isPaused) return;
             const items = [
-                { l: "🥖", t: "khobz", v: 10 },
-                { l: "📧", t: "ssa_form", v: 50 },
-                { l: "💊", t: "spam", v: -50 },
-                { l: "💔", t: "spam", v: -20 }
+                { l: "🥖", t: "khobz", v: 10, c: "#ffcf00" },
+                { l: "📧", t: "ssa_form", v: 50, c: "#00f3ff" },
+                { l: "💊", t: "spam", v: -50, c: "#ff0055" }
             ];
-            let item = (Math.random() < 0.08) ? { l: "azul", t: "azul", v: 0 } : items[Math.floor(Math.random() * items.length)];
+            let item = (Math.random() < 0.08) ? { l: "azul", t: "azul", v: 0, c: "#00ff41" } : items[Math.floor(Math.random() * items.length)];
             obstacles.push({
-                x: Math.random() * (canvas.width - 40) + 20,
+                x: Math.random() * (canvas.width - 60) + 30,
                 y: -50,
-                speed: (3 + Math.random() * 2) * (gameState.powerUp ? 0.5 : gameState.difficulty),
+                speed: (3 + Math.random() * 2) * (gameState.powerUp ? 0.6 : gameState.difficulty),
                 ...item
             });
         }
 
+        function update() {
+            // Difficulty Equation: $Difficulty = 1 + (t / 60)$
+            gameState.difficulty = 1 + ((Date.now() - startTime) / 60000);
+
+            if (gameState.powerUp) {
+                gameState.powerUpTimer--;
+                azulBar.style.width = (gameState.powerUpTimer / 400) * 100 + "%";
+                if (gameState.powerUpTimer <= 0) {
+                    gameState.powerUp = false;
+                    azulContainer.style.visibility = 'hidden';
+                }
+            }
+
+            particles.forEach((p, i) => { p.update(); if (p.alpha <= 0) particles.splice(i, 1); });
+
+            obstacles.forEach((ob, i) => {
+                if (gameState.powerUp && ob.v > 0) {
+                    ob.x += (gameState.player.x - ob.x) * 0.12;
+                    ob.y += (gameState.player.y - ob.y) * 0.12;
+                } else { ob.y += ob.speed; }
+
+                let dist = Math.hypot(gameState.player.x - ob.x, (gameState.player.y - 40) - ob.y);
+                if (dist < 70) {
+                    if (ob.t === 'azul') {
+                        gameState.powerUp = true;
+                        gameState.powerUpTimer = 400;
+                        azulContainer.style.visibility = 'visible';
+                        if (!gameState.isMuted) sounds.azul_meow.play();
+                    } else {
+                        gameState.score += ob.v;
+                        if (!gameState.isMuted && sounds[ob.t]) sounds[ob.t].play();
+                    }
+                    // Burst Particles
+                    for(let j=0; j<12; j++) particles.push(new Particle(ob.x, ob.y, ob.c));
+                    
+                    obstacles.splice(i, 1);
+                    scoreElement.innerText = gameState.score;
+                }
+            });
+            obstacles = obstacles.filter(ob => ob.y < canvas.height + 50);
+        }
+
         function loop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Background
             if (bg.complete) {
                 ctx.filter = gameState.powerUp ? 'sepia(1) hue-rotate(90deg) brightness(0.4)' : 'grayscale(1) brightness(0.3)';
                 ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
                 ctx.filter = 'none';
             }
 
-            if (gameState.mode === 'playing' && !gameState.isPaused) {
-                update();
-            }
+            if (gameState.mode === 'playing' && !gameState.isPaused) update();
 
-            // Draw Lori
+            particles.forEach(p => p.draw());
+
             const loriImg = sprites[gameState.currentSprite] || sprites['stand'];
-            if (loriImg.complete) {
-                ctx.drawImage(loriImg, gameState.player.x - 40, gameState.player.y - 60, 80, 120);
-            }
+            if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
 
-            // Draw Items
             obstacles.forEach(ob => {
                 if (ob.t === 'azul') {
-                    if (sprites.azul.complete) ctx.drawImage(sprites.azul, ob.x - 25, ob.y - 25, 50, 50);
+                    if (sprites.azul.complete) ctx.drawImage(sprites.azul, ob.x - 30, ob.y - 30, 60, 60);
                 } else {
-                    ctx.font = "40px serif";
-                    ctx.fillText(ob.l, ob.x - 20, ob.y);
+                    ctx.font = "45px serif";
+                    ctx.fillText(ob.l, ob.x - 22, ob.y);
                 }
             });
-
             requestAnimationFrame(loop);
         }
 
-        function update() {
-            gameState.difficulty = 1 + ((Date.now() - startTime) / 60000);
-
-            if (gameState.powerUp) {
-                gameState.powerUpTimer--;
-                if (gameState.powerUpTimer <= 0) gameState.powerUp = false;
-            }
-
-            obstacles.forEach((ob, i) => {
-                // Magnetism logic
-                if (gameState.powerUp && ob.v > 0) {
-                    ob.x += (gameState.player.x - ob.x) * 0.1;
-                    ob.y += (gameState.player.y - ob.y) * 0.1;
-                } else {
-                    ob.y += ob.speed;
-                }
-
-                // Collision
-                let dist = Math.hypot(gameState.player.x - ob.x, gameState.player.y - ob.y);
-                if (dist < 60) {
-                    if (ob.t === 'azul') {
-                        gameState.powerUp = true;
-                        gameState.powerUpTimer = 400;
-                        if (!gameState.isMuted) sounds.azul_meow.play();
-                    } else {
-                        gameState.score += ob.v;
-                        if (!gameState.isMuted && sounds[ob.t]) sounds[ob.t].play();
-                    }
-                    obstacles.splice(i, 1);
-                    scoreElement.innerText = gameState.score;
-                }
-            });
-
-            obstacles = obstacles.filter(ob => ob.y < canvas.height + 50);
-        }
-
-        // Touch Control
         canvas.addEventListener('touchmove', (e) => {
             gameState.player.x = e.touches[0].clientX;
             gameState.currentSprite = (gameState.player.x < canvas.width/2) ? 'stand_west' : 'stand_east';
             e.preventDefault();
         }, { passive: false });
 
-        function togglePause() { gameState.isPaused = !gameState.isPaused; }
+        function togglePause() { gameState.isPaused = !gameState.isPaused; document.getElementById('pause-btn').innerText = gameState.isPaused ? '▶️' : '⏸️';}
         function toggleMute() { gameState.isMuted = !gameState.isMuted; }
     </script>
 </body>

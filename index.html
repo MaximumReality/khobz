@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maximum Reality: The Bureaucracy Heist</title>
+    <style>
+        :root { --neon: #00f3ff; --danger: #ff0055; --gold: #ffcf00; }
+        body { margin: 0; padding: 0; background-color: #050505; overflow: hidden; height: 100dvh; font-family: 'Courier New', monospace; color: white; }
+        canvas { width: 100vw; height: 100dvh; display: block; touch-action: none; }
+        
+        /* UI LAYERS */
+        #ui, .overlay, #game-controls { position: absolute; width: 100%; box-sizing: border-box; }
+        
+        #ui { top: 10px; left: 0; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; z-index: 10; }
+        .stat { color: var(--neon); text-shadow: 0 0 5px var(--neon); font-weight: bold; }
+
+        #game-controls { bottom: 20px; right: 20px; display: flex; gap: 10px; width: auto; z-index: 100; }
+        .ctrl-btn { background: rgba(0,0,0,0.7); border: 1px solid var(--neon); color: var(--neon); padding: 10px; border-radius: 5px; font-size: 18px; cursor: pointer; pointer-events: auto; }
+
+        .overlay { 
+            top: 0; left: 0; height: 100%; background: rgba(0,0,0,0.9); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 30px; z-index: 200; pointer-events: auto;
+        }
+        h1 { color: var(--neon); margin-bottom: 10px; font-size: 28px; text-transform: uppercase; }
+        .story { font-size: 14px; line-height: 1.5; max-width: 450px; color: #ccc; margin-bottom: 20px; }
+        .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; margin-bottom: 25px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; }
+        .start-btn { background: var(--neon); color: black; border: none; padding: 15px 40px; font-weight: bold; font-family: inherit; font-size: 20px; border-radius: 5px; cursor: pointer; }
+        .home-link { color: var(--neon); text-decoration: none; font-size: 12px; margin-top: 20px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="stat">SCORE: <span id="score">0</span></div>
+        <div class="stat">BEST: <span id="high-score">0</span></div>
+    </div>
+
+    <div id="game-controls">
+        <button class="ctrl-btn" onclick="togglePause()" id="pause-btn">⏸️</button>
+        <button class="ctrl-btn" onclick="toggleMute()" id="mute-btn">🔊</button>
+        <button class="ctrl-btn" onclick="location.reload()">🔄</button>
+    </div>
+
+    <div id="overlay">
+        <h1>THE BUREAUCRACY HEIST</h1>
+        <p class="story">
+            Lqliâa, Morocco. 2026. The system is a ghost. <br><br>
+            Survive on 🥖 while dodging predatory 💊 and 👻. Catch the 📧 that changes everything.
+        </p>
+        <div class="legend">
+            <span>📧 SSA Form: +50</span> <span>🥖 Khobz: +10</span>
+            <span>💊 Spam: -50</span> <span>💔 Rejection: -20</span>
+            <span>⭐ Hope: +100</span> <span>👻 Ghost: 0</span>
+        </div>
+        <button class="start-btn" onclick="startGame()">INITIATE HEIST</button>
+        <a href="https://maximumreality.xyz" class="home-link">BACK TO MAXIMUMREALITY.XYZ</a>
+    </div>
+
+    <div id="game-over" class="overlay" style="display:none;">
+        <h1 style="color:var(--danger)">HEIST INTERRUPTED</h1>
+        <p>The bureaucracy overwhelmed the connection.</p>
+        <h2 id="final-score-display">FINAL SCORE: 0</h2>
+        <button class="start-btn" onclick="location.reload()">RE-INITIALIZE</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
+        const overlay = document.getElementById('overlay');
+        const gameOverOverlay = document.getElementById('game-over');
+
+        // 1. Assets
+        const bg = new Image(); bg.src = 'cyberpunk_city_bg.JPG'; 
+        const sprites = {};
+        const frameNames = ['arms_up', 'stand_west', 'idle', 'stand_east', 'reach', 'stand'];
+        frameNames.forEach(name => {
+            sprites[name] = new Image();
+            sprites[name].src = `lori_${name}.png`;
+        });
+
+        const sounds = {
+            ssa_form: new Audio('youve-got-mail.mp3'),
+            khobz: new Audio('crunch.mp3'),
+            michelin_star: new Audio('chime.mp3'),
+            spam: new Audio('error.mp3'),
+            macy_ghost: new Audio('whoosh.mp3')
+        };
+
+        // 2. Global State
+        let gameState = {
+            mode: 'menu',
+            player: { x: window.innerWidth / 2, y: window.innerHeight - 150 }, 
+            score: 0,
+            highScore: localStorage.getItem('maxReality_highScore') || 0,
+            isMuted: false,
+            isPaused: false,
+            difficulty: 1.0,
+            movingLeft: false, movingRight: false, currentSprite: 'stand'
+        };
+        
+        let obstacles = [];
+        let particles = [];
+        let startTime = 0;
+        highScoreElement.innerText = gameState.highScore;
+
+        // 3. Classes
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 4 + 2;
+                this.speedX = (Math.random() - 0.5) * 8;
+                this.speedY = (Math.random() - 0.5) * 8;
+                this.color = color;
+                this.alpha = 1;
+            }
+            update() {
+                this.x += this.speedX; this.y += this.speedY;
+                this.alpha -= 0.02;
+            }
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // 4. Core Logic
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gameState.player.y = canvas.height - 150; 
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startGame() {
+            overlay.style.display = 'none';
+            gameState.mode = 'playing';
+            gameState.score = 0;
+            gameState.difficulty = 1.0;
+            startTime = Date.now();
+            // Unlock audio
+            Object.values(sounds).forEach(s => { s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(()=>{}) });
+            setInterval(spawnObstacle, 1000);
+        }
+
+        function endGame() {
+            gameState.mode = 'gameOver';
+            document.getElementById('final-score-display').innerText = `FINAL SCORE: ${gameState.score}`;
+            gameOverOverlay.style.display = 'flex';
+        }
+
+        function spawnObstacle() {
+            if (gameState.mode !== 'playing' || gameState.isPaused) return;
+            const types = [
+                { label: "🥖", type: "khobz", value: 10 },
+                { label: "💔", type: "spam", value: -20 },
+                { label: "📧", type: "ssa_form", value: 50 },
+                { label: "⭐", type: "michelin_star", value: 100 },
+                { label: "👻", type: "macy_ghost", value: 0 },
+                { label: "💊", type: "spam_capsule", value: -50 }
+            ];
+            const choice = types[Math.floor(Math.random() * types.length)];
+            obstacles.push({ 
+                x: Math.random() * (canvas.width - 40), 
+                y: -50, 
+                speed: (2 + Math.random() * 3) * gameState.difficulty, 
+                ...choice 
+            });
+        }
+
+        // 5. Input Handling
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState.mode !== 'playing' || gameState.isPaused) return;
+            const touch = e.touches[0];
+            const newX = touch.clientX;
+            gameState.movingLeft = newX < gameState.player.x - 5;
+            gameState.movingRight = newX > gameState.player.x + 5;
+            gameState.player.x = newX;
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') gameState.movingLeft = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') gameState.movingRight = true;
+            if (e.key === 'p') togglePause();
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') gameState.movingLeft = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') gameState.movingRight = false;
+        });
+
+        function togglePause() {
+            gameState.isPaused = !gameState.isPaused;
+            document.getElementById('pause-btn').innerText = gameState.isPaused ? '▶️' : '⏸️';
+        }
+
+        function toggleMute() {
+            gameState.isMuted = !gameState.isMuted;
+            document.getElementById('mute-btn').innerText = gameState.isMuted ? '🔇' : '🔊';
+        }
+
+        // 6. Update Engine
+        function update() {
+            if (gameState.mode !== 'playing' || gameState.isPaused) return;
+
+            // Difficulty Ramp
+            let elapsed = (Date.now() - startTime) / 1000;
+            gameState.difficulty = 1 + (elapsed * 0.03);
+
+            // Desktop Movement
+            if (gameState.movingLeft) gameState.player.x -= 7;
+            if (gameState.movingRight) gameState.player.x += 7;
+
+            let isReaching = false;
+
+            // Particles Update
+            particles.forEach((p, i) => {
+                p.update();
+                if (p.alpha <= 0) particles.splice(i, 1);
+            });
+
+            obstacles.forEach((ob, index) => {
+                ob.y += ob.speed;
+                let dx = gameState.player.x - ob.x;
+                let dy = gameState.player.y - ob.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Collision
+                if (dist < 60) {
+                    if (sounds[ob.type] && !gameState.isMuted) {
+                        sounds[ob.type].currentTime = 0;
+                        sounds[ob.type].play();
+                    }
+                    
+                    // Particle burst for positive items
+                    if (ob.value > 0) {
+                        const pColor = ob.type === 'ssa_form' ? '#00f3ff' : '#ffcf00';
+                        for(let i=0; i<10; i++) particles.push(new Particle(ob.x, ob.y, pColor));
+                    }
+
+                    gameState.score += ob.value;
+                    scoreElement.innerText = gameState.score;
+
+                    if (gameState.score > gameState.highScore) {
+                        gameState.highScore = gameState.score;
+                        highScoreElement.innerText = gameState.highScore;
+                        localStorage.setItem('maxReality_highScore', gameState.highScore);
+                    }
+                    obstacles.splice(index, 1);
+                    
+                    if (gameState.score < -150) endGame();
+                }
+                if (dist < 120 && ob.value > 0) isReaching = true;
+            });
+
+            // Sprite Selection
+            if (isReaching) gameState.currentSprite = 'reach';
+            else if (gameState.movingLeft) gameState.currentSprite = 'stand_west';
+            else if (gameState.movingRight) gameState.currentSprite = 'stand_east';
+            else gameState.currentSprite = 'stand';
+
+            obstacles = obstacles.filter(ob => ob.y < canvas.height);
+        }
+
+        // 7. Render Loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Layer 1: BG
+            if (bg.complete) {
+                ctx.filter = 'grayscale(100%) brightness(30%) contrast(110%)';
+                ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+                ctx.filter = 'none';
+            }
+
+            // Layer 2: Particles
+            particles.forEach(p => p.draw());
+
+            // Layer 3: Cyber-Lori
+            const img = sprites[gameState.currentSprite];
+            if (img && img.complete) {
+                ctx.drawImage(img, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
+            }
+
+            // Layer 4: Obstacles
+            ctx.font = "40px serif";
+            obstacles.forEach(ob => { ctx.fillText(ob.label, ob.x, ob.y); });
+
+            update();
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+</body>
+</html>

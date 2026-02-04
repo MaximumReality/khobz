@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Maximum Reality: The Bureaucracy Heist</title>
+    <style>
+        :root { --neon: #00f3ff; --danger: #ff0055; }
+        body { margin: 0; padding: 0; background-color: #050505; overflow: hidden; height: 100dvh; font-family: 'Courier New', monospace; color: white; }
+        canvas { width: 100vw; height: 100dvh; display: block; touch-action: none; }
+        
+        /* UI LAYERS */
+        #ui, #overlay, #game-controls { position: absolute; width: 100%; pointer-events: none; }
+        
+        /* TOP HUD */
+        #ui { top: 10px; left: 10px; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; }
+        .stat { color: var(--neon); text-shadow: 0 0 5px var(--neon); font-weight: bold; pointer-events: none; }
+
+        /* CONTROL BUTTONS */
+        #game-controls { top: 10px; right: 10px; display: flex; gap: 10px; pointer-events: auto; z-index: 100; }
+        .ctrl-btn { background: rgba(0,0,0,0.7); border: 1px solid var(--neon); color: var(--neon); padding: 5px 10px; border-radius: 5px; font-size: 14px; cursor: pointer; }
+
+        /* START / GAME OVER OVERLAY */
+        #overlay { 
+            top: 0; left: 0; height: 100%; background: rgba(0,0,0,0.9); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px; box-sizing: border-box; pointer-events: auto; z-index: 200;
+        }
+        h1 { color: var(--neon); margin-bottom: 10px; font-size: 24px; }
+        .story { font-size: 14px; line-height: 1.4; max-width: 400px; margin-bottom: 20px; color: #ccc; }
+        .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 20px; text-align: left; }
+        .start-btn { 
+            background: var(--neon); color: black; border: none; padding: 15px 40px; 
+            font-weight: bold; font-family: inherit; font-size: 18px; border-radius: 5px; 
+        }
+        a { color: var(--neon); text-decoration: none; font-size: 12px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="stat">SCORE: <span id="score">0</span></div>
+        <div class="stat">BEST: <span id="high-score">0</span></div>
+    </div>
+
+    <div id="game-controls">
+        <button class="ctrl-btn" onclick="toggleMute()" id="mute-btn">🔊</button>
+        <button class="ctrl-btn" onclick="location.reload()">🔄</button>
+        <button class="ctrl-btn" onclick="window.location.href='https://maximumreality.xyz'">🏠</button>
+    </div>
+
+    <div id="overlay">
+        <h1>THE BUREAUCRACY HEIST</h1>
+        <p class="story">
+            In the heart of Lqliâa, the red tape is closing in. <br><br>
+            Avoid the predatory spam 💊, survive the ghosts of retail 👻, and keep your hope alive by catching the vital SSA updates 📧 and the bread of survival 🥖.
+        </p>
+        <div class="legend">
+            <span>📧 SSA Form: +50</span> <span>🥖 Khobz: +10</span>
+            <span>💊 Spam: -50</span> <span>💔 Rejection: -20</span>
+            <span>⭐ Hope: +100</span> <span>👻 Ghost: 0</span>
+        </div>
+        <button class="start-btn" onclick="startGame()">INITIATE HEIST</button>
+        <a href="https://maximumreality.xyz">MAXIMUMREALITY.XYZ</a>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
+        const overlay = document.getElementById('overlay');
+
+        // 1. Assets
+        const bg = new Image(); bg.src = 'cyberpunk_city_bg.JPG'; 
+        const sprites = {};
+        const frameNames = ['arms_up', 'stand_west', 'idle', 'stand_east', 'reach', 'stand'];
+        frameNames.forEach(name => {
+            sprites[name] = new Image();
+            sprites[name].src = `lori_${name}.png`;
+        });
+
+        const sounds = {
+            ssa_form: new Audio('youve-got-mail.mp3'),
+            khobz: new Audio('crunch.mp3'),
+            michelin_star: new Audio('chime.mp3'),
+            spam: new Audio('error.mp3'),
+            macy_ghost: new Audio('whoosh.mp3')
+        };
+
+        // 2. State
+        let gameState = {
+            mode: 'menu',
+            player: { x: window.innerWidth / 2, y: window.innerHeight - 150 }, 
+            score: 0,
+            highScore: localStorage.getItem('maxReality_highScore') || 0,
+            isMuted: false,
+            movingLeft: false, movingRight: false, currentSprite: 'stand'
+        };
+        highScoreElement.innerText = gameState.highScore;
+        let obstacles = [];
+        let spawnTimer;
+
+        // 3. Functions
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gameState.player.y = canvas.height - 150; 
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function toggleMute() {
+            gameState.isMuted = !gameState.isMuted;
+            document.getElementById('mute-btn').innerText = gameState.isMuted ? '🔇' : '🔊';
+            Object.values(sounds).forEach(s => s.muted = gameState.isMuted);
+        }
+
+        function startGame() {
+            overlay.style.display = 'none';
+            gameState.mode = 'playing';
+            gameState.score = 0;
+            scoreElement.innerText = '0';
+            obstacles = [];
+            // Unlock audio for iOS
+            Object.values(sounds).forEach(s => { s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(()=>{}) });
+            spawnTimer = setInterval(spawnObstacle, 1000);
+        }
+
+        function spawnObstacle() {
+            if (gameState.mode !== 'playing') return;
+            const types = [
+                { label: "🥖", type: "khobz", value: 10 },
+                { label: "💔", type: "spam", value: -20 },
+                { label: "📧", type: "ssa_form", value: 50 },
+                { label: "⭐", type: "michelin_star", value: 100 },
+                { label: "👻", type: "macy_ghost", value: 0 },
+                { label: "💊", type: "spam_capsule", value: -50 }
+            ];
+            const choice = types[Math.floor(Math.random() * types.length)];
+            obstacles.push({ x: Math.random() * (canvas.width - 40), y: -50, speed: 3 + Math.random() * 4, ...choice });
+        }
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState.mode !== 'playing') return;
+            const touch = e.touches[0];
+            const newX = touch.clientX;
+            gameState.movingLeft = newX < gameState.player.x - 5;
+            gameState.movingRight = newX > gameState.player.x + 5;
+            gameState.player.x = newX;
+            e.preventDefault();
+        }, { passive: false });
+
+        function update() {
+            if (gameState.mode !== 'playing') return;
+            let isReaching = false;
+
+            obstacles.forEach((ob, index) => {
+                ob.y += ob.speed;
+                let dx = gameState.player.x - ob.x;
+                let dy = gameState.player.y - ob.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 60) {
+                    if (sounds[ob.type] && !gameState.isMuted) {
+                        sounds[ob.type].currentTime = 0;
+                        sounds[ob.type].play();
+                    }
+                    gameState.score += ob.value;
+                    scoreElement.innerText = gameState.score;
+                    if (gameState.score > gameState.highScore) {
+                        gameState.highScore = gameState.score;
+                        highScoreElement.innerText = gameState.highScore;
+                        localStorage.setItem('maxReality_highScore', gameState.highScore);
+                    }
+                    obstacles.splice(index, 1);
+                }
+                if (dist < 120 && ob.value > 0) isReaching = true;
+            });
+
+            if (isReaching) gameState.currentSprite = 'reach';
+            else if (gameState.movingLeft) gameState.currentSprite = 'stand_west';
+            else if (gameState.movingRight) gameState.currentSprite = 'stand_east';
+            else gameState.currentSprite = 'stand';
+
+            obstacles = obstacles.filter(ob => ob.y < canvas.height);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (bg.complete) {
+                ctx.filter = 'grayscale(100%) brightness(35%) contrast(110%)';
+                ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+                ctx.filter = 'none';
+            }
+
+            const img = sprites[gameState.currentSprite];
+            if (img && img.complete) {
+                ctx.drawImage(img, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
+            }
+
+            ctx.font = "40px serif";
+            obstacles.forEach(ob => { ctx.fillText(ob.label, ob.x, ob.y); });
+
+            update();
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+</body>
+</html>

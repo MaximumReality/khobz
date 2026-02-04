@@ -8,13 +8,8 @@
     <title>Maximum Reality: The Bureaucracy Heist</title>
     <style>
         body { margin: 0; padding: 0; background-color: #0a0a0a; overflow: hidden; height: 100dvh; font-family: 'Courier New', monospace; }
-        canvas {
-            width: 100vw;
-            height: 100dvh;
-            display: block;
-            touch-action: none;
-        }
-        #ui { position: absolute; top: 10px; left: 10px; color: #00f3ff; pointer-events: none; text-shadow: 0 0 5px #00f3ff; font-weight: bold; }
+        canvas { width: 100vw; height: 100dvh; display: block; touch-action: none; }
+        #ui { position: absolute; top: 10px; left: 10px; color: #00f3ff; pointer-events: none; text-shadow: 0 0 5px #00f3ff; font-weight: bold; z-index: 10; }
     </style>
 </head>
 <body>
@@ -27,7 +22,7 @@
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
 
-        // 1. Assets & State
+        // 1. Assets (Images & Sound)
         const bg = new Image();
         bg.src = 'cyberpunk_city_bg.JPG'; 
 
@@ -38,27 +33,40 @@
             sprites[name].src = `lori_${name}.png`;
         });
 
-        let gameState = {
-            player: { x: window.innerWidth / 2, y: window.innerHeight - 150 }, 
-            score: 0,
-            movingLeft: false,
-            movingRight: false,
-            currentSprite: 'stand'
+        const sounds = {
+            ssa_form: new Audio('youve-got-mail.mp3'), // Fixed lowercase 'y'
+            khobz: new Audio('crunch.mp3'),
+            michelin_star: new Audio('chime.mp3'),
+            spam: new Audio('error.mp3'),
+            macy_ghost: new Audio('whoosh.mp3')
         };
 
+        let audioUnlocked = false;
+
+        // 2. State
+        let gameState = {
+            player: { x: window.innerWidth / 2, y: window.innerHeight - 150 }, 
+            score: 0, movingLeft: false, movingRight: false, currentSprite: 'stand'
+        };
         let obstacles = [];
 
-        // 2. Responsive Setup
+        // 3. Setup Functions
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            // Anchors Lori 150px from the bottom of the CURRENT visible area
             gameState.player.y = canvas.height - 150; 
         }
         window.addEventListener('resize', resize);
         resize();
 
-        // 3. Spawning & Movement Logic
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            Object.values(sounds).forEach(s => {
+                s.play().then(() => { s.pause(); s.currentTime = 0; }).catch(() => {});
+            });
+            audioUnlocked = true;
+        }
+
         function spawnObstacle() {
             const types = [
                 { label: "🥖", type: "khobz", value: 10 },
@@ -77,35 +85,35 @@
             });
         }
 
+        // 4. Interaction
         canvas.addEventListener('touchmove', (e) => {
+            unlockAudio();
             const touch = e.touches[0];
             const newX = touch.clientX;
-            
             gameState.movingLeft = newX < gameState.player.x - 5;
             gameState.movingRight = newX > gameState.player.x + 5;
             gameState.player.x = newX;
-            
             e.preventDefault();
         }, { passive: false });
 
-        // 4. Update Engine
+        // 5. Update & Logic
         function update() {
             let isReaching = false;
-
             obstacles.forEach((ob, index) => {
                 ob.y += ob.speed;
-
                 let dx = gameState.player.x - ob.x;
                 let dy = gameState.player.y - ob.y;
                 let dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist < 60) {
+                    if (sounds[ob.type]) {
+                        sounds[ob.type].currentTime = 0;
+                        sounds[ob.type].play();
+                    }
                     gameState.score += ob.value;
                     scoreElement.innerText = gameState.score;
                     obstacles.splice(index, 1);
                 }
-
-                // If a "good" item is close, trigger the reach sprite
                 if (dist < 120 && ob.value > 0) isReaching = true;
             });
 
@@ -117,29 +125,23 @@
             obstacles = obstacles.filter(ob => ob.y < canvas.height);
         }
 
-        // 5. Draw Loop
+        // 6. Draw Loop
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer 1: Desaturated Background
             if (bg.complete) {
                 ctx.filter = 'grayscale(100%) brightness(35%) contrast(110%)';
                 ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-                ctx.filter = 'none'; // Reset for characters
+                ctx.filter = 'none';
             }
 
-            // Layer 2: Cyber-Lori
             const img = sprites[gameState.currentSprite];
             if (img && img.complete) {
-                // Adjusting draw to keep her centered on the touch point
                 ctx.drawImage(img, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
             }
 
-            // Layer 3: Colored Items
             ctx.font = "40px serif";
-            obstacles.forEach(ob => {
-                ctx.fillText(ob.label, ob.x, ob.y);
-            });
+            obstacles.forEach(ob => { ctx.fillText(ob.label, ob.x, ob.y); });
 
             update();
             requestAnimationFrame(draw);

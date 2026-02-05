@@ -20,63 +20,58 @@
 <meta name="twitter:image" content="cyberpunk_city_bg.JPG">
 <meta property="og:url" content="https://maximumreality.github.io/khobz/">
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>The Bureaucracy Heist v2.5</title>
-    <style>
-        :root { --neon: #00f3ff; --danger: #ff0055; --matrix: #00ff41; --gold: #ffcf00; }
-        body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100dvh; font-family: 'Courier New', monospace; color: white; }
-        
-        /* The Wrapper handles the Heartbreak Tilt without breaking the layout */
-        #stage { width: 100vw; height: 100dvh; transition: transform 0.3s ease-out; position: relative; overflow: hidden; }
-        canvas { display: block; width: 100vw; height: 100dvh; touch-action: none; }
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>The Bureaucracy Heist v2.5</title>
+<style>
+:root { --neon: #00f3ff; --danger: #ff0055; --matrix: #00ff41; --gold: #ffcf00; }
+body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100dvh; font-family: 'Courier New', monospace; color: white; }
 
-        /* UI Elements */
-        #ui, .overlay, #game-controls { position: absolute; width: 100%; box-sizing: border-box; z-index: 10; pointer-events: none; }
-        #ui { top: 50px; left: 0; display: flex; justify-content: space-between; padding: 0 25px; }
-        .stat { color: var(--neon); font-weight: bold; font-size: 18px; text-shadow: 0 0 8px #000; }
-        
-        #azul-timer {
-            position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
-            width: 150px; height: 4px; background: rgba(255,255,255,0.1); visibility: hidden;
-        }
-        #azul-fill { height: 100%; width: 100%; background: var(--matrix); transition: width 0.1s linear; }
+/* The Wrapper handles the Heartbreak Tilt without breaking the layout */
+#stage { width: 100vw; height: 100dvh; transition: transform 0.3s ease-out; position: relative; overflow: hidden; }
+canvas { display: block; width: 100vw; height: 100dvh; touch-action: none; }
 
+/* UI Elements */
+#ui, .overlay, #game-controls { position: absolute; width: 100%; box-sizing: border-box; z-index: 10; pointer-events: none; }
+#ui { top: 50px; left: 0; display: flex; justify-content: space-between; padding: 0 25px; }
+.stat { color: var(--neon); font-weight: bold; font-size: 18px; text-shadow: 0 0 8px #000; }
 
-        .overlay { 
-            top: 0; left: 0; height: 100%; background: rgba(0,0,0,0.92); 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 30px; pointer-events: auto; z-index: 100;
-        }
-        .start-btn { background: var(--neon); color: #000; border: none; padding: 20px 50px; font-weight: bold; font-size: 20px; border-radius: 5px; cursor: pointer; }
-        h1 { color: var(--neon); margin: 0; font-size: 24px; text-transform: uppercase; }
-        .story { color: #aaa; max-width: 280px; line-height: 1.6; font-size: 14px; margin: 20px 0; }
-        #flash { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--danger); opacity:0; pointer-events:none; z-index:90; }
-    #pause-btn {
-    width: 60px; /* or whatever fits the symbol */
-    text-align: center;
+#azul-timer {
+    position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+    width: 150px; height: 4px; background: rgba(255,255,255,0.1); visibility: hidden;
 }
-        #game-controls {
+#azul-fill { height: 100%; width: 100%; background: var(--matrix); transition: width 0.1s linear; }
+
+.overlay { 
+    top: 0; left: 0; height: 100%; background: rgba(0,0,0,0.92); 
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 30px; pointer-events: auto; z-index: 100;
+}
+.start-btn { background: var(--neon); color: #000; border: none; padding: 20px 50px; font-weight: bold; font-size: 20px; border-radius: 5px; cursor: pointer; }
+h1 { color: var(--neon); margin: 0; font-size: 24px; text-transform: uppercase; }
+.story { color: #aaa; max-width: 280px; line-height: 1.6; font-size: 14px; margin: 20px 0; }
+#flash { position: absolute; top:0; left:0; width:100%; height:100%; background: var(--danger); opacity:0; pointer-events:none; z-index:90; }
+#pause-btn { width: 60px; text-align: center; }
+#game-controls {
     bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     justify-content: space-between;
-    width: auto; /* shrink to fit buttons */
-    gap: 10px;   /* spacing between buttons */
+    width: auto;
+    gap: 10px;
     pointer-events: auto;
 }
-
 .ctrl-btn {
-    flex-shrink: 0; /* prevents shrinking */
+    flex-shrink: 0;
     min-width: 60px;
     padding: 15px 18px; 
     font-size: 22px;
     text-align: center;
 }
-    </style>
+</style>
 </head>
 <body>
 
@@ -97,42 +92,42 @@
     </div>
 
     <div id="overlay" class="overlay">
-    <h1>THE HEIST</h1>
-    <p class="story">
-        Lqliâa 2026. <br>
-        The system is heavy. <br> Reach for the <b>Stars ⭐</b>. <br>
-        Azul hacks the tilt. 🐈‍⬛
-    </p>
-    <button class="start-btn" onclick="startGame()">INITIATE</button>
-</div>
+        <h1>THE HEIST</h1>
+        <p class="story">
+            Lqliâa 2026. <br>
+            The system is heavy. <br> Reach for the <b>Stars ⭐</b>. <br>
+            Azul hacks the tilt. 🐈‍⬛
+        </p>
+        <button class="start-btn" onclick="startGame()">INITIATE</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
 </div>
-    <div id="pause-overlay" class="overlay" style="display:none; background: rgba(0,0,0,0.75);">
+
+<div id="pause-overlay" class="overlay" style="display:none; background: rgba(0,0,0,0.75);">
     <h1>PAUSED</h1>
     <p class="story">Tap ⏸️ to resume</p>
 </div>
-    
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const stage = document.getElementById('stage');
-    const flash = document.getElementById('flash');
-    
-       // --- Assets ---
-    const bg = new Image(); 
-    bg.src = 'cyberpunk_city_bg.JPG';
-    
-    const sprites = {}; 
-    ['stand', 'stand_west', 'stand_east', 'reach', 'azul', 'arms_up'].forEach(n => {
-        sprites[n] = new Image();
-        sprites[n].src = (n === 'azul') ? 'helper-azul.png' : `lori_${n}.png`;
-    });
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const stage = document.getElementById('stage');
+const flash = document.getElementById('flash');
 
-    const bgVictory = new Image();
-    bgVictory.src = 'max_real_bonus-bg.JPG';
+// --- Assets ---
+const bg = new Image(); 
+bg.src = 'cyberpunk_city_bg.JPG';
 
-    // --- Sounds ---
+const sprites = {};
+['stand', 'stand_west', 'stand_east', 'reach', 'azul', 'arms_up'].forEach(n => {
+    sprites[n] = new Image();
+    sprites[n].src = (n === 'azul') ? 'helper-azul.png' : `lori_${n}.png`;
+});
+
+const bgVictory = new Image();
+bgVictory.src = 'max_real_bonus-bg.JPG';
+
+// --- Sounds ---
 const sounds = {
     ssa_form: new Audio('youve-got-mail.mp3'),
     khobz: new Audio('crunch.mp3'),
@@ -141,22 +136,6 @@ const sounds = {
     michelin_star: new Audio('chime.mp3'),
     spam_capsule: new Audio('whoosh.mp3')
 };
-
-// --- Play function ---
-function play(key) {
-    if (!sounds[key]) return;
-    const s = sounds[key].cloneNode();
-    s.volume = 0.5;
-    s.play().catch(()=>{});
-}
-
-// --- Unlock sounds for iPhone / mobile ---
-function unlockSounds() {
-    Object.values(sounds).forEach(s => {
-        s.play().then(()=>s.pause()).catch(()=>{});
-        s.currentTime = 0;
-    });
-}
 
 // --- State ---
 let gameState = {
@@ -174,6 +153,14 @@ let gameState = {
 };
 let obstacles = [], particles = [], startTime = 0;
 document.getElementById('high-score').innerText = gameState.highScore;
+
+// --- Play function ---
+function play(key) {
+    if (!sounds[key]) return;
+    const s = sounds[key].cloneNode();
+    s.volume = 0.5;
+    s.play().catch(() => {});
+}
 
 // --- Particles ---
 class Particle {
@@ -194,7 +181,6 @@ class Particle {
     }
 }
 
-// --- Resize ---
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -204,22 +190,24 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// --- Start Game ---
 function startGame() {
     document.getElementById('overlay').style.display = 'none';
     gameState.mode = 'playing';
     startTime = Date.now();
 
-    unlockSounds();
+    // Unlock all sounds on first tap
+    Object.values(sounds).forEach(s => {
+        s.play().then(() => s.pause()).catch(() => {});
+        s.currentTime = 0;
+    });
 
     setInterval(spawn, 900);
     requestAnimationFrame(loop);
 }
 
-// --- Spawn items ---
 function spawn() {
     if (gameState.mode !== 'playing' || gameState.isPaused) return;
-
+    
     const items = [
         { l: "🥖", t: "khobz", v: 5, c: "#ffcf00" },
         { l: "📧", t: "ssa_form", v: 50, c: "#00f3ff" },
@@ -245,7 +233,6 @@ function spawn() {
     });
 }
 
-// --- Update ---
 function update() {
     if (gameState.isPaused) return;
     gameState.difficulty = 1 + ((Date.now() - startTime) / 30000);
@@ -271,6 +258,7 @@ function update() {
         if (dist < 160 && ob.v > 0) isReaching = true;
 
         if (dist < 75) {
+            // SPECIAL ITEMS LOGIC
             if (ob.t === 'azul') {
                 gameState.powerUp = true;
                 gameState.powerUpTimer = 400;
@@ -285,8 +273,7 @@ function update() {
                 gameState.score += ob.v;
                 play(ob.t);
                 if (ob.l === '💔') {
-                    flash.style.opacity = 0.5; 
-                    setTimeout(()=>flash.style.opacity=0, 150);
+                    flash.style.opacity = 0.5; setTimeout(()=>flash.style.opacity=0, 150);
                     stage.style.transform = `rotate(${(Math.random()-0.5)*15}deg) scale(1.05)`;
                 }
             }
@@ -306,19 +293,18 @@ function update() {
     obstacles = obstacles.filter(ob => ob.y < canvas.height + 100);
 }
 
-// --- Loop ---
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (bg.complete) {
-        ctx.filter = gameState.mode === 'victory' ? 'none' : (gameState.powerUp ? 'sepia(1) brightness(0.5)' : 'grayscale(1) brightness(0.3)');
+        ctx.filter = gameState.powerUp ? 'sepia(1) brightness(0.5)' : 'grayscale(1) brightness(0.3)';
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
         ctx.filter = 'none';
     }
     if (gameState.mode === 'playing' || gameState.mode === 'victory') update();
     particles.forEach(p => p.draw());
     const loriImg = (gameState.mode === 'victory') ? sprites['arms_up'] : (sprites[gameState.currentSprite] || sprites['stand']);
-    if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
 
+    if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
     obstacles.forEach(ob => {
         if (ob.t === 'azul') {
             if (sprites.azul.complete) ctx.drawImage(sprites.azul, ob.x - 30, ob.y - 30, 60, 60);
@@ -327,11 +313,9 @@ function loop() {
             ctx.fillText(ob.l, ob.x - 20, ob.y);
         }
     });
-
     requestAnimationFrame(loop);
 }
 
-// --- Touch controls ---
 canvas.addEventListener('touchmove', (e) => {
     const touchX = e.touches[0].clientX;
     gameState.player.dir = (touchX < gameState.player.x) ? 'left' : 'right';
@@ -340,7 +324,6 @@ canvas.addEventListener('touchmove', (e) => {
 }, { passive: false });
 canvas.addEventListener('touchend', () => { gameState.player.dir = null; });
 
-// --- Pause ---
 function togglePause() {
     gameState.isPaused = !gameState.isPaused;
     const btn = document.getElementById('pause-btn');
@@ -349,7 +332,6 @@ function togglePause() {
 }
 document.getElementById('pause-overlay').addEventListener('click', togglePause);
 
-// --- Victory ---
 function reachParadise() {
     gameState.mode = 'victory';
     flash.style.background = "#fff";
@@ -362,6 +344,5 @@ function reachParadise() {
     }, 500);
 }
 </script>
-
 </body>
 </html>

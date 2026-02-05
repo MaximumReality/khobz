@@ -1,133 +1,100 @@
-# Maximum Reality: The Bureaucracy Heist
+# 🌌 Maximum Reality: The Bureaucracy Heist
 
-**Version:** 2.5  
-**Platform:** HTML5 (mobile-first)  
+**Version:** 2.6 (The Rickroll Update)  
+**Platform:** HTML5 (Mobile-first / PWA)  
 **Author:** Lori Kaye Sifuentes  
+**URL:** [MaximumReality.xyz](https://maximumreality.xyz)
 
 ---
 
-## 🌌 Overview
+## 📖 Overview
 
-Step into a chaotic world of bureaucracy, absurd emails, and Maximum Reality chaos. Play as **Lori**, navigating a surreal cyberpunk city while **dodging spam capsules**, collecting useful items, and relying on **Azul**, your floating Sphynx cat, to bring focus when the world goes sideways.  
+Step into a chaotic world of bureaucracy, absurd emails, and **Maximum Reality** chaos. Play as **Lori**, navigating a surreal cyberpunk city while dodging the "system." This version introduces the **"Astley Protocol"**, a high-stakes Rickroll that adds a layer of legendary internet irony to the heist.
 
-This is a **hand-coded, iPhone-first HTML game** designed to keep the mind active and engaged, even under real-world stress.  
-
----
-
-## 🐈‍⬛ Characters
-
-### Lori
-- The player character  
-- Moves left/right via touch controls  
-- Reacts to obstacles with reach animations  
-
-### Azul
-- Hairless Sphynx cat, floating in Maximum Reality style  
-- Stabilizes the world when activated:
-  - Stops tilt and flashes
-  - Slows chaos
-  - Pulls items toward the player  
-- Symbolizes focus, clarity, and small victories in a chaotic world  
-
-### Spam Capsules 💊
-- Represent absurd, overwhelming emails, miracle cures, and distractions  
-- Colliding with one **reduces points**  
-- Dodge them to maintain your score  
+This is a **hand-coded, iPhone-first HTML game** designed to keep the mind active and engaged, even under real-world stress.
 
 ---
 
-## 🎮 Items
+## 🐈‍⬛ Characters & Legends
+
+### **Lori**
+- The player character, navigating the digital landscape of Lqliâa.
+- Moves left/right via touch controls with dynamic "reaching" animations.
+
+### **Azul**
+- Hairless Sphynx cat / Quantum Physicist / Hacker Cat.
+- **Stabilizes the world:** Stops tilt, slows chaos, and uses a "magnetic" pull to grab collectibles.
+
+### **🕺 Rick (The Legend)**
+- **Rarity:** 0.5% spawn rate.
+- **The Catch:** Worth **1,000 points** and triggers a **Gold Flash**.
+- Represents the ultimate "glitch in the bureaucracy."
+
+---
+
+## 🎮 Items & Bureaucracy
 
 | Icon | Type | Points | Color | Notes |
-|------|------|-------|-------|-------|
-| 🥖 | khobz | 5 | #ffcf00 | Regular collectible |
-| 📧 | ssa_form | 50 | #00f3ff | Represents official forms |
-| ⭐ | michelin_star | 100 | #ffffff | Bonus collectible |
-| 💔 | spam | -40 | #ff0055 | Harmful obstacle |
-| 💊 | spam_capsule | -7 | #ffffff | Dodge only |
-| 💻 | laptop | 200 | #00ff41 | Power item |
-| 👻 | ghost | 0 | #888 | Cosmetic/ambient |
-| 🧳 | victory_key | 0 | #fff | Appears near game completion |
+|:---:|:---|:---:|:---:|:---|
+| 🥖 | **khobz** | 5 | `#ffcf00` | Regular collectible |
+| 📧 | **ssa_form** | 50 | `#00f3ff` | Official system forms |
+| ⭐ | **michelin_star**| 100 | `#ffffff` | Chef Mochkil's approval |
+| 💔 | **spam** | -40 | `#ff0055` | Bureaucratic heartbreak (tilts screen) |
+| 💊 | **spam_capsule** | -7 | `#ffffff` | Low-level distraction |
+| 💻 | **laptop** | 200 | `#00ff41` | High-speed hacking tool |
+| 👻 | **ghost** | 0 | `#888` | Pointless government employee |
+| 🧳 | **victory_key** | 0 | `#fff` | Appears at 24,800 points for Paradise |
 
 ---
 
-## 🕹️ Controls
+## 🕹️ PWA Installation (iPhone 14 Pro Max)
 
-- **Touch move**: drag left/right to move Lori  
-- **Pause**: tap ⏸️ button  
-- **Restart**: tap 🔄  
-- **Home**: tap 🏠  
+This game is a **Progressive Web App (PWA)**. To play without Safari browser bars:
+
+1.  Open the game URL in **Safari**.
+2.  Tap the **Share** button (square with the up arrow).
+3.  Select **"Add to Home Screen"**.
+4.  Launch **"Heist"** from your home screen for the full standalone experience.
 
 ---
 
 ## ⚡ Mechanics
 
-1. Items spawn at intervals, falling from top of screen  
-2. Score is updated based on items collected or obstacles hit  
-3. Azul may appear randomly or via power-ups:
-   - Stops tilt  
-   - Softens screen flash  
-   - Pulls collectibles toward the player  
-4. Power-ups:
-   - Collecting Azul triggers “focus mode”  
-   - Laptops temporarily double points  
-5. Victory:
-   - Catching the 🧳 suitcase triggers the end scene
+1.  **Focus Mode:** Collecting Azul triggers "Focus Mode," stabilizing the camera and pulling items toward Lori.
+2.  **The Bureaucracy Logic:** Best Score persists in `localStorage`—beating the 4,100 "standard" is the goal.
+3.  **Difficulty Scaling:** System speed increases over time.
+4.  **Audio Handshake:** Music is "unlocked" via the **INITIATE** button to bypass mobile restrictions.
 
 ---
 
 ## 🖌️ Visual & Audio
 
-- Cyberpunk city background  
-- Maximum Reality aesthetic: neon, glitch effects, VHS-style overlay  
-- Sound effects for items:
-  - `ssa_form` → “You’ve got mail”  
-  - `khobz` → crunch  
-  - `spam` → error beep  
-  - `azul_meow` → power-up audio cue  
-  - `michelin_star` → chime  
-
----
-
-## 💡 Notes
-
-- Game is intentionally **short and vanilla HTML**, built for iPhone without a laptop  
-- Designed to **stimulate focus and memory**  
-- Spam capsules and Azul reflect real-world chaos and recovery  
-- Can be expanded when access to a computer is available  
+-   **Background Music:** `roll.mp3` (A 3.8MB Rickroll anthem).
+-   **Sync Logic:** Music automatically pauses when the game is paused via the ⏸️ button.
+-   **Aesthetic:** Neon, glitch effects, and VHS-style overlays optimized for Super Retina XDR.
 
 ---
 
 ## 📂 File Structure
-/index.html
-/cyberpunk_city_bg.JPG
-/helper-azul.png
-/lori_stand.png
-/lori_stand_west.png
-/lori_stand_east.png
-/lori_reach.png
-/lori_arms_up.png
-/max_real_bonus-bg.JPG
-/youve-got-mail.mp3
-/crunch.mp3
-/azul-hacker-meow.mp3
-/error.mp3
-/chime.mp3
----
 
-## 📝 Credits
-
-- **Design & Coding:** Lori Kaye Sifuentes  
-- **Maximum Reality Concept:** Lori Kaye Sifuentes  
-- **Sound Effects & Sprites:** Custom and free assets  
-- **Special Thanks:** Azul, the floating Sphynx cat 🐈‍⬛  
-
----
-
-## 🔮 Future Goals
-
-- Add more **chaos mechanics** reflecting real-world frustrations  
-- Expand **Azul powers** to include memory boosts and “focus shields”  
-- Build more **Maximum Reality mini-games** for iPhone  
-
----
+```text
+/
+├── index.html              # Core Logic & UI
+├── manifest.json           # PWA Configuration
+├── cyberpunk_city_bg.JPG   # App Icon & Main BG
+├── helper-azul.png         # Azul Sprite
+├── rick.png                # Legend Sprite
+├── max_real_bonus-bg.JPG   # Paradise Background
+├── roll.mp3                # Background Anthem (Rickroll)
+├── youve-got-mail.mp3      # SSA Form Sound
+├── crunch.mp3              # Khobz Sound
+├── azul-hacker-meow.mp3    # Power-up Sound
+├── error.mp3               # Spam Sound
+├── chime.mp3               # Michelin Star Sound
+└── whoosh.mp3              # Capsule Sound
+📝 Credits
+• Design & Coding: Lori Kaye Sifuentes
+• Concept: Maximum Reality
+• Co-Stars: Azul (Sphynx Cat) & Mochkil (Tuxedo Chef)
+• YouTube: @maximumrealitylori
+<!-- end list -->

@@ -154,7 +154,6 @@ let gameState = {
 let obstacles = [], particles = [], startTime = 0;
 document.getElementById('high-score').innerText = gameState.highScore;
 
-// --- Play function ---
 function play(key) {
     if (!sounds[key]) return;
     const s = sounds[key].cloneNode();
@@ -162,7 +161,6 @@ function play(key) {
     s.play().catch(() => {});
 }
 
-// --- Particles ---
 class Particle {
     constructor(x, y, color) {
         this.x = x; this.y = y;
@@ -194,20 +192,16 @@ function startGame() {
     document.getElementById('overlay').style.display = 'none';
     gameState.mode = 'playing';
     startTime = Date.now();
-
-    // Unlock all sounds on first tap
     Object.values(sounds).forEach(s => {
         s.play().then(() => s.pause()).catch(() => {});
         s.currentTime = 0;
     });
-
     setInterval(spawn, 900);
     requestAnimationFrame(loop);
 }
 
 function spawn() {
     if (gameState.mode !== 'playing' || gameState.isPaused) return;
-    
     const items = [
         { l: "🥖", t: "khobz", v: 5, c: "#ffcf00" },
         { l: "📧", t: "ssa_form", v: 50, c: "#00f3ff" },
@@ -217,14 +211,11 @@ function spawn() {
         { l: "👻", t: "ghost", v: 0, c: "#888" },
         { l: "💊", t: "spam_capsule", v: -7, c: "#ffffff" }
     ];
-
     let item = (Math.random() < 0.07) ? { l: "azul", t: "azul", v: 0, c: "#00ff41" } : items[Math.floor(Math.random() * items.length)];
-
     if (gameState.score >= 24800 && !gameState.suitcaseSpawned) {
         item = { l: "🧳", t: "victory_key", v: 0, c: "#fff" };
         gameState.suitcaseSpawned = true;
     }
-
     obstacles.push({
         x: Math.random() * (canvas.width - 60) + 30,
         y: -50,
@@ -254,11 +245,14 @@ function update() {
             ob.y += (gameState.player.y - ob.y) * 0.15;
         } else { ob.y += ob.speed; }
 
-        let dist = Math.hypot(gameState.player.x - ob.x, (gameState.player.y - 50) - ob.y);
-        if (dist < 160 && ob.v > 0) isReaching = true;
+        // --- THE OPTIMIZED DISTANCE LOGIC ---
+        let dx = gameState.player.x - ob.x;
+        let dy = (gameState.player.y - 50) - ob.y;
+        let distSq = dx * dx + dy * dy;
 
-        if (dist < 75) {
-            // SPECIAL ITEMS LOGIC
+        if (distSq < 25600 && ob.v > 0) isReaching = true; // Reach at 160px
+
+        if (distSq < 5625) { // Catch at 75px
             if (ob.t === 'azul') {
                 gameState.powerUp = true;
                 gameState.powerUpTimer = 400;
@@ -277,7 +271,6 @@ function update() {
                     stage.style.transform = `rotate(${(Math.random()-0.5)*15}deg) scale(1.05)`;
                 }
             }
-
             for(let j=0; j<12; j++) particles.push(new Particle(ob.x, ob.y, ob.c));
             obstacles.splice(i, 1);
             document.getElementById('score').innerText = gameState.score;
@@ -303,7 +296,6 @@ function loop() {
     if (gameState.mode === 'playing' || gameState.mode === 'victory') update();
     particles.forEach(p => p.draw());
     const loriImg = (gameState.mode === 'victory') ? sprites['arms_up'] : (sprites[gameState.currentSprite] || sprites['stand']);
-
     if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
     obstacles.forEach(ob => {
         if (ob.t === 'azul') {
@@ -330,7 +322,6 @@ function togglePause() {
     btn.innerText = gameState.isPaused ? '▶️' : '⏸️';
     document.getElementById('pause-overlay').style.display = gameState.isPaused ? 'flex' : 'none';
 }
-document.getElementById('pause-overlay').addEventListener('click', togglePause);
 
 function reachParadise() {
     gameState.mode = 'victory';
@@ -344,5 +335,6 @@ function reachParadise() {
     }, 500);
 }
 </script>
+
 </body>
 </html>

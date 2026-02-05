@@ -142,6 +142,9 @@
 
     // --- State ---
     let gameState = {
+            laptopMode: false,
+    suitcaseSpawned: false,
+
     mode: 'menu',
     isPaused: false,
     player: { x: 0, y: 0, dir: null },
@@ -201,36 +204,44 @@
         requestAnimationFrame(loop);
     }
 
-    function spawn() {
-    if (gameState.mode !== 'playing' || gameState.isPaused) return; // ❌ stop if paused
-    const items = [
-        { l: "🥖", t: "khobz", v: 10, c: "#ffcf00" },
-        { l: "📧", t: "ssa_form", v: 50, c: "#00f3ff" },
-        { l: "⭐", t: "michelin_star", v: 100, c: "#fff" },
-        { l: "💔", t: "spam", v: -40, c: "#ff0055" },
-        { l: "💊", t: "spam", v: -30, c: "#ff0055" },
-        { l: "👻", t: "ghost", v: 0, c: "#888" }
-    ];
-    let item = (Math.random() < 0.07) ? { l: "azul", t: "azul", v: 0, c: "#00ff41" } : items[Math.floor(Math.random() * items.length)];
-    obstacles.push({
-        x: Math.random() * (canvas.width - 60) + 30,
-        y: -50,
-        speed: (3 + Math.random() * 3) * (gameState.powerUp ? 0.7 : gameState.difficulty),
-        ...item
-    });
-}
+        function spawn() {
+        if (gameState.mode !== 'playing' || gameState.isPaused) return;
+        
+        const items = [
+            { l: "🥖", t: "khobz", v: 10, c: "#ffcf00" },
+            { l: "📧", t: "ssa_form", v: 50, c: "#00f3ff" },
+            { l: "⭐", t: "michelin_star", v: 100, c: "#fff" },
+            { l: "💔", t: "spam", v: -40, c: "#ff0055" },
+            { l: "💻", t: "laptop", v: 200, c: "#00f3ff" },
+            { l: "👻", t: "ghost", v: 0, c: "#888" }
+        ];
 
-        function update() {
+        let item = (Math.random() < 0.07) ? { l: "azul", t: "azul", v: 0, c: "#00ff41" } : items[Math.floor(Math.random() * items.length)];
+        
+        // Spawn the suitcase ONLY once near the goal
+        if (gameState.score >= 4800 && !gameState.suitcaseSpawned) {
+            item = { l: "🧳", t: "victory_key", v: 0, c: "#fff" };
+            gameState.suitcaseSpawned = true;
+        }
+
+        obstacles.push({
+            x: Math.random() * (canvas.width - 60) + 30,
+            y: -50,
+            speed: (3 + Math.random() * 3) * (gameState.powerUp ? 0.7 : gameState.difficulty),
+            ...item
+        });
+    }
+
+    function update() {
         if (gameState.isPaused) return;
         gameState.difficulty = 1 + ((Date.now() - startTime) / 60000);
 
-        if (gameState.powerUp && !gameState.isPaused) {
+        if (gameState.powerUp) {
             gameState.powerUpTimer--;
             document.getElementById('azul-fill').style.width = (gameState.powerUpTimer/400)*100 + "%";
             if (gameState.powerUpTimer <= 0) {
                 gameState.powerUp = false;
                 document.getElementById('azul-timer').style.visibility = 'hidden';
-                stage.style.transform = 'rotate(0deg)';
             }
         }
 
@@ -246,12 +257,17 @@
             if (dist < 160 && ob.v > 0) isReaching = true;
 
             if (dist < 75) {
+                // SPECIAL ITEMS LOGIC
                 if (ob.t === 'azul') {
                     gameState.powerUp = true;
                     gameState.powerUpTimer = 400;
                     document.getElementById('azul-timer').style.visibility = 'visible';
-                    stage.style.transform = 'rotate(0deg) scale(1)';
                     play('azul_meow');
+                } else if (ob.t === 'laptop') {
+                    gameState.score += (ob.v * 2); // Laptop gives 400 pts!
+                    play('michelin_star');
+                } else if (ob.t === 'victory_key') {
+                    reachParadise(); // CATCHING THE SUITCASE WINS THE GAME
                 } else {
                     gameState.score += ob.v;
                     play(ob.t);
@@ -260,16 +276,12 @@
                         stage.style.transform = `rotate(${(Math.random()-0.5)*15}deg) scale(1.05)`;
                     }
                 }
+                
                 for(let j=0; j<12; j++) particles.push(new Particle(ob.x, ob.y, ob.c));
                 obstacles.splice(i, 1);
                 document.getElementById('score').innerText = gameState.score;
             }
         });
-
-        // --- THE SECRET TRIGGER IS NOW IN THE RIGHT PLACE ---
-        if (gameState.score >= 5000 && gameState.mode !== 'victory') {
-            reachParadise();
-        }
 
         if (isReaching) gameState.currentSprite = 'reach';
         else if (gameState.player.dir === 'left') gameState.currentSprite = 'stand_west';
@@ -283,7 +295,6 @@
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (bg.complete) {
-            // Updated filter logic: If in victory mode, NO grayscale!
             if (gameState.mode === 'victory') {
                 ctx.filter = 'none';
             } else {
@@ -292,14 +303,10 @@
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
             ctx.filter = 'none';
         }
-
         if (gameState.mode === 'playing' || gameState.mode === 'victory') update();
-
         particles.forEach(p => p.draw());
-
         const loriImg = sprites[gameState.currentSprite] || sprites['stand'];
         if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
-
         obstacles.forEach(ob => {
             if (ob.t === 'azul') {
                 if (sprites.azul.complete) ctx.drawImage(sprites.azul, ob.x - 30, ob.y - 30, 60, 60);
@@ -311,45 +318,35 @@
         requestAnimationFrame(loop);
     }
 
-    // ... (Keep your existing touch events and togglePause) ...
-        // --- Input & Controls ---
     canvas.addEventListener('touchmove', (e) => {
         const touchX = e.touches[0].clientX;
         gameState.player.dir = (touchX < gameState.player.x) ? 'left' : 'right';
         gameState.player.x = touchX;
         e.preventDefault();
     }, { passive: false });
-
-    canvas.addEventListener('touchend', () => { 
-        gameState.player.dir = null; 
-    });
+    canvas.addEventListener('touchend', () => { gameState.player.dir = null; });
 
     function togglePause() {
         gameState.isPaused = !gameState.isPaused;
         const btn = document.getElementById('pause-btn');
         btn.innerText = gameState.isPaused ? '▶️' : '⏸️';
         document.getElementById('pause-overlay').style.display = gameState.isPaused ? 'flex' : 'none';
-        
-        const overlayText = document.querySelector('#pause-overlay .story');
-        overlayText.innerHTML = gameState.isPaused ? `Tap ${btn.innerText} to resume` : '';
     }
-
     document.getElementById('pause-overlay').addEventListener('click', togglePause);
 
-    // --- The Secret Transition ---
     function reachParadise() {
-        gameState.mode = 'victory'; // Locks the state so it only triggers once
+        gameState.mode = 'victory';
         flash.style.background = "#fff";
         flash.style.opacity = 1;
-        
         setTimeout(() => {
-            bg.src = bgVictory.src; // Swaps to the Albanian Coast
+            bg.src = bgVictory.src;
             flash.style.opacity = 0;
             stage.style.transform = "rotate(0deg) scale(1)";
-            console.log("Welcome to Maximum Reality: Paradise");
+            console.log("Welcome to Paradise");
         }, 500);
     }
 </script>
+
 
 
    

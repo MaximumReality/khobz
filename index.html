@@ -127,6 +127,10 @@
         sprites[n].src = (n === 'azul') ? 'helper-azul.png' : `lori_${n}.png`;
     });
 
+        // Near your other Image() declarations
+    const bgVictory = new Image();
+    bgVictory.src = 'max_real_bonus-bg.JPG';
+
     const sounds = {
         ssa_form: new Audio('youve-got-mail.mp3'),
         khobz: new Audio('crunch.mp3'),
@@ -134,6 +138,7 @@
         spam: new Audio('error.mp3'),
         michelin_star: new Audio('chime.mp3')
     };
+    
 
     // --- State ---
     let gameState = {
@@ -215,19 +220,19 @@
     });
 }
 
-    function update() {
+        function update() {
         if (gameState.isPaused) return;
         gameState.difficulty = 1 + ((Date.now() - startTime) / 60000);
 
         if (gameState.powerUp && !gameState.isPaused) {
-    gameState.powerUpTimer--;
-    document.getElementById('azul-fill').style.width = (gameState.powerUpTimer/400)*100 + "%";
-    if (gameState.powerUpTimer <= 0) {
-        gameState.powerUp = false;
-        document.getElementById('azul-timer').style.visibility = 'hidden';
-        stage.style.transform = 'rotate(0deg)';
-    }
-}
+            gameState.powerUpTimer--;
+            document.getElementById('azul-fill').style.width = (gameState.powerUpTimer/400)*100 + "%";
+            if (gameState.powerUpTimer <= 0) {
+                gameState.powerUp = false;
+                document.getElementById('azul-timer').style.visibility = 'hidden';
+                stage.style.transform = 'rotate(0deg)';
+            }
+        }
 
         let isReaching = false;
 
@@ -238,7 +243,6 @@
             } else { ob.y += ob.speed; }
 
             let dist = Math.hypot(gameState.player.x - ob.x, (gameState.player.y - 50) - ob.y);
-            
             if (dist < 160 && ob.v > 0) isReaching = true;
 
             if (dist < 75) {
@@ -262,7 +266,11 @@
             }
         });
 
-        // Sprite Selection
+        // --- THE SECRET TRIGGER IS NOW IN THE RIGHT PLACE ---
+        if (gameState.score >= 5000 && gameState.mode !== 'victory') {
+            reachParadise();
+        }
+
         if (isReaching) gameState.currentSprite = 'reach';
         else if (gameState.player.dir === 'left') gameState.currentSprite = 'stand_west';
         else if (gameState.player.dir === 'right') gameState.currentSprite = 'stand_east';
@@ -275,12 +283,17 @@
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (bg.complete) {
-            ctx.filter = gameState.powerUp ? 'sepia(1) brightness(0.5)' : 'grayscale(1) brightness(0.3)';
+            // Updated filter logic: If in victory mode, NO grayscale!
+            if (gameState.mode === 'victory') {
+                ctx.filter = 'none';
+            } else {
+                ctx.filter = gameState.powerUp ? 'sepia(1) brightness(0.5)' : 'grayscale(1) brightness(0.3)';
+            }
             ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
             ctx.filter = 'none';
         }
 
-        if (gameState.mode === 'playing') update();
+        if (gameState.mode === 'playing' || gameState.mode === 'victory') update();
 
         particles.forEach(p => p.draw());
 
@@ -298,25 +311,47 @@
         requestAnimationFrame(loop);
     }
 
+    // ... (Keep your existing touch events and togglePause) ...
+        // --- Input & Controls ---
     canvas.addEventListener('touchmove', (e) => {
         const touchX = e.touches[0].clientX;
         gameState.player.dir = (touchX < gameState.player.x) ? 'left' : 'right';
         gameState.player.x = touchX;
         e.preventDefault();
     }, { passive: false });
-    canvas.addEventListener('touchend', () => { gameState.player.dir = null; });
+
+    canvas.addEventListener('touchend', () => { 
+        gameState.player.dir = null; 
+    });
 
     function togglePause() {
-    gameState.isPaused = !gameState.isPaused;
-    const btn = document.getElementById('pause-btn');
-    btn.innerText = gameState.isPaused ? '▶️' : '⏸️';
-    document.getElementById('pause-overlay').style.display = gameState.isPaused ? 'flex' : 'none';
-    
-    // Update overlay text to match current symbol
-    const overlayText = document.querySelector('#pause-overlay .story');
-    overlayText.innerHTML = gameState.isPaused ? `Tap ${btn.innerText} to resume` : '';
-}
+        gameState.isPaused = !gameState.isPaused;
+        const btn = document.getElementById('pause-btn');
+        btn.innerText = gameState.isPaused ? '▶️' : '⏸️';
+        document.getElementById('pause-overlay').style.display = gameState.isPaused ? 'flex' : 'none';
+        
+        const overlayText = document.querySelector('#pause-overlay .story');
+        overlayText.innerHTML = gameState.isPaused ? `Tap ${btn.innerText} to resume` : '';
+    }
+
     document.getElementById('pause-overlay').addEventListener('click', togglePause);
+
+    // --- The Secret Transition ---
+    function reachParadise() {
+        gameState.mode = 'victory'; // Locks the state so it only triggers once
+        flash.style.background = "#fff";
+        flash.style.opacity = 1;
+        
+        setTimeout(() => {
+            bg.src = bgVictory.src; // Swaps to the Albanian Coast
+            flash.style.opacity = 0;
+            stage.style.transform = "rotate(0deg) scale(1)";
+            console.log("Welcome to Maximum Reality: Paradise");
+        }, 500);
+    }
 </script>
+
+
+   
 </body>
 </html>

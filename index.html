@@ -197,14 +197,19 @@
     resize();
 
     function startGame() {
-        document.getElementById('overlay').style.display = 'none';
-        gameState.mode = 'playing';
-        startTime = Date.now();
-        // Unlock Safari Audio
-        Object.values(sounds).forEach(s => { s.play().then(()=>s.pause()).catch(()=>{})});
-        setInterval(spawn, 900);
-        requestAnimationFrame(loop);
-    }
+    document.getElementById('overlay').style.display = 'none';
+    gameState.mode = 'playing';
+    startTime = Date.now();
+
+    // Unlock all sounds
+    Object.values(sounds).forEach(s => {
+        s.play().then(() => s.pause()).catch(() => {});
+        s.currentTime = 0;
+    });
+
+    setInterval(spawn, 900);
+    requestAnimationFrame(loop);
+}
 
         function spawn() {
         if (gameState.mode !== 'playing' || gameState.isPaused) return;

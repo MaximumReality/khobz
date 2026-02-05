@@ -192,9 +192,9 @@ function startGame() {
     document.getElementById('overlay').style.display = 'none';
     gameState.mode = 'playing';
     startTime = Date.now();
+    // Unlock audio for iOS
     Object.values(sounds).forEach(s => {
         s.play().then(() => s.pause()).catch(() => {});
-        s.currentTime = 0;
     });
     setInterval(spawn, 900);
     requestAnimationFrame(loop);
@@ -245,14 +245,13 @@ function update() {
             ob.y += (gameState.player.y - ob.y) * 0.15;
         } else { ob.y += ob.speed; }
 
-        // --- THE OPTIMIZED DISTANCE LOGIC ---
         let dx = gameState.player.x - ob.x;
         let dy = (gameState.player.y - 50) - ob.y;
         let distSq = dx * dx + dy * dy;
 
-        if (distSq < 25600 && ob.v > 0) isReaching = true; // Reach at 160px
+        if (distSq < 25600 && ob.v > 0) isReaching = true;
 
-        if (distSq < 5625) { // Catch at 75px
+        if (distSq < 5625) { 
             if (ob.t === 'azul') {
                 gameState.powerUp = true;
                 gameState.powerUpTimer = 400;
@@ -287,16 +286,21 @@ function update() {
 }
 
 function loop() {
+    if (gameState.isPaused) return; // Stop drawing if paused
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (bg.complete) {
         ctx.filter = gameState.powerUp ? 'sepia(1) brightness(0.5)' : 'grayscale(1) brightness(0.3)';
         ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
         ctx.filter = 'none';
     }
-    if (gameState.mode === 'playing' || gameState.mode === 'victory') update();
+    
+    update();
+    
     particles.forEach(p => p.draw());
     const loriImg = (gameState.mode === 'victory') ? sprites['arms_up'] : (sprites[gameState.currentSprite] || sprites['stand']);
     if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
+    
     obstacles.forEach(ob => {
         if (ob.t === 'azul') {
             if (sprites.azul.complete) ctx.drawImage(sprites.azul, ob.x - 30, ob.y - 30, 60, 60);
@@ -308,20 +312,33 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-canvas.addEventListener('touchmove', (e) => {
-    const touchX = e.touches[0].clientX;
-    gameState.player.dir = (touchX < gameState.player.x) ? 'left' : 'right';
-    gameState.player.x = touchX;
-    e.preventDefault();
-}, { passive: false });
-canvas.addEventListener('touchend', () => { gameState.player.dir = null; });
-
 function togglePause() {
     gameState.isPaused = !gameState.isPaused;
     const btn = document.getElementById('pause-btn');
     btn.innerText = gameState.isPaused ? '▶️' : '⏸️';
     document.getElementById('pause-overlay').style.display = gameState.isPaused ? 'flex' : 'none';
+    
+    if (!gameState.isPaused) {
+        requestAnimationFrame(loop); // Restart the loop
+    }
 }
+
+// Global Touch Handlers
+canvas.addEventListener('touchstart', (e) => {
+    if (gameState.isPaused) {
+        togglePause(); // Tap to resume
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    if (gameState.isPaused) return;
+    const touchX = e.touches[0].clientX;
+    gameState.player.dir = (touchX < gameState.player.x) ? 'left' : 'right';
+    gameState.player.x = touchX;
+    e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { gameState.player.dir = null; });
 
 function reachParadise() {
     gameState.mode = 'victory';
@@ -331,10 +348,10 @@ function reachParadise() {
         bg.src = bgVictory.src;
         flash.style.opacity = 0;
         stage.style.transform = "rotate(0deg) scale(1)";
-        console.log("Welcome to Paradise");
     }, 500);
 }
 </script>
+
 
 </body>
 </html>

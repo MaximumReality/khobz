@@ -75,7 +75,6 @@ const sprites = {};
     sprites[n].src = (n === 'azul') ? 'helper-azul.png' : (n === 'rick' ? 'rick.png' : `lori_${n}.png`);
 });
 
-
 // --- Audio ---
 const sounds = {
     ssa_form: new Audio('youve-got-mail.mp3'),
@@ -155,24 +154,19 @@ function spawn() {
         { l: "💻", t: "laptop", v: 200, c: "#00ff41" },
         { l: "💊", t: "spam_capsule", v: -7, c: "#ffffff" },
         { l: "👻", t: "ghost", v: 0, c: "#888" }
-
     ];
-       let item;
+    let item;
     const roll = Math.random();
 
-    if (roll < 0.07) {
-        item = { l: "azul", t: "azul", v: 0, c: "#00ff41" };
-    } else if (roll < 0.075) { // 0.5% chance for the Rick-Ghost
-        item = { l: "🕺", t: "rick", v: 1000, c: "#ffcf00" }; // Big points for the Legend!
-    } else {
-        item = items[Math.floor(Math.random() * items.length)];
-    }
-
-    
-    // THE WIN CONDITION: Spawn Suitcase at 24800
     if (gameState.score >= 24800 && !gameState.suitcaseSpawned) {
         item = { l: "🧳", t: "victory_key", v: 0, c: "#fff" };
         gameState.suitcaseSpawned = true;
+    } else if (roll < 0.07) {
+        item = { l: "azul", t: "azul", v: 0, c: "#00ff41" };
+    } else if (roll < 0.075) {
+        item = { l: "🕺", t: "rick", v: 1000, c: "#ffcf00" };
+    } else {
+        item = items[Math.floor(Math.random() * items.length)];
     }
 
     obstacles.push({
@@ -199,11 +193,22 @@ function update() {
 
     let isReaching = false;
     obstacles.forEach((ob, i) => {
+        // MOVE LOGIC
+        let speed = (ob.t === 'victory_key') ? 1.5 : ob.speed;
         if (gameState.powerUp && ob.v > 0) {
             ob.x += (gameState.player.x - ob.x) * 0.15;
             ob.y += (gameState.player.y - ob.y) * 0.15;
-        } else { ob.y += ob.speed; }
+        } else { 
+            ob.y += speed; 
+        }
 
+        // SUITCASE ANCHOR
+        if (ob.t === 'victory_key' && ob.y > canvas.height - 180) {
+            ob.y = canvas.height - 180;
+            ob.x += Math.sin(Date.now() / 500) * 2;
+        }
+
+        // COLLISION LOGIC
         let dx = gameState.player.x - ob.x;
         let dy = (gameState.player.y - 50) - ob.y;
         if (dx*dx + dy*dy < 25600 && ob.v > 0) isReaching = true;
@@ -216,7 +221,6 @@ function update() {
                 play('azul_meow');
             } else if (ob.t === 'rick') {
                 gameState.score += ob.v;
-                // Celebrate the Rickroll with a Gold Flash!
                 flash.style.background = "var(--gold)";
                 flash.style.opacity = 0.6; 
                 setTimeout(()=>flash.style.opacity=0, 300);
@@ -232,7 +236,6 @@ function update() {
                     stage.style.transform = `rotate(${(Math.random()-0.5)*15}deg) scale(1.05)`;
                 }
             }
-            // Update High Score Bureaucracy
             if (gameState.score > gameState.highScore) {
                 gameState.highScore = gameState.score;
                 localStorage.setItem('maxReality_highScore', gameState.highScore);
@@ -250,7 +253,7 @@ function update() {
     else gameState.currentSprite = 'stand';
 
     particles.forEach((p, i) => { p.update(); if (p.a <= 0) particles.splice(i, 1); });
-    obstacles = obstacles.filter(ob => ob.y < canvas.height + 100);
+    obstacles = obstacles.filter(ob => (ob.y < canvas.height + 100) || ob.t === 'victory_key');
 }
 
 function loop() {
@@ -267,12 +270,11 @@ function loop() {
     const loriImg = (gameState.mode === 'victory') ? sprites['arms_up'] : (sprites[gameState.currentSprite] || sprites['stand']);
     if (loriImg.complete) ctx.drawImage(loriImg, gameState.player.x - 50, gameState.player.y - 75, 100, 150);
 
-    // DRAWING THE DROPPING ITEMS
     obstacles.forEach(ob => {
         if (ob.t === 'azul' && sprites.azul.complete) {
             ctx.drawImage(sprites.azul, ob.x - 30, ob.y - 30, 60, 60);
         } else if (ob.t === 'rick' && sprites.rick.complete) {
-            ctx.drawImage(sprites.rick, ob.x - 35, ob.y - 45, 70, 90); // Slightly bigger Rick for visibility
+            ctx.drawImage(sprites.rick, ob.x - 35, ob.y - 45, 70, 90);
         } else {
             ctx.font = "40px serif";
             ctx.fillText(ob.l, ob.x - 20, ob.y);
@@ -280,7 +282,6 @@ function loop() {
     });
     requestAnimationFrame(loop);
 }
-
 
 function reachParadise() {
     gameState.mode = 'victory';
@@ -291,8 +292,6 @@ function reachParadise() {
         bg.src = bgVictory.src;
         flash.style.opacity = 0;
         stage.style.transform = "rotate(0deg) scale(1)";
-        
-        // Updated HTML to include Rick Chillin'
         document.getElementById('overlay').innerHTML = `
             <img src="rick.png" style="position:absolute; bottom:10px; left:10px; width:80px; opacity:0.8; transform: scaleX(-1);">
             <h1>PARADISE</h1>
@@ -302,7 +301,6 @@ function reachParadise() {
         document.getElementById('overlay').style.display = 'flex';
     }, 500);
 }
-
 
 function togglePause() {
     if (gameState.mode !== 'playing') return;
@@ -327,6 +325,7 @@ canvas.addEventListener('touchmove', (e) => {
 
 canvas.addEventListener('touchend', () => { gameState.player.dir = null; });
 pauseBtn.style.visibility = 'hidden';
+
 </script>
 </body>
 </html>

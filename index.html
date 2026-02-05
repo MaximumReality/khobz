@@ -209,7 +209,7 @@
         if (gameState.mode !== 'playing' || gameState.isPaused) return;
         
         const items = [
-            { l: "🥖", t: "khobz", v: 10, c: "#ffcf00" },
+            { l: "🥖", t: "khobz", v: 5, c: "#ffcf00" },
             { l: "📧", t: "ssa_form", v: 50, c: "#00f3ff" },
             { l: "⭐", t: "michelin_star", v: 100, c: "#fff" },
             { l: "💔", t: "spam", v: -40, c: "#ff0055" },
@@ -220,7 +220,7 @@
         let item = (Math.random() < 0.07) ? { l: "azul", t: "azul", v: 0, c: "#00ff41" } : items[Math.floor(Math.random() * items.length)];
         
         // Spawn the suitcase ONLY once near the goal
-        if (gameState.score >= 4800 && !gameState.suitcaseSpawned) {
+        if (gameState.score >= 24800 && !gameState.suitcaseSpawned) {
             item = { l: "🧳", t: "victory_key", v: 0, c: "#fff" };
             gameState.suitcaseSpawned = true;
         }
@@ -235,7 +235,7 @@
 
     function update() {
         if (gameState.isPaused) return;
-        gameState.difficulty = 1 + ((Date.now() - startTime) / 60000);
+        gameState.difficulty = 1 + ((Date.now() - startTime) / 30000);
 
         if (gameState.powerUp) {
             gameState.powerUpTimer--;

@@ -3,6 +3,20 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:type" content="website">
+<meta property="og:url" content="https://maximumreality.github.io/winning.html">
+<meta property="og:title" content="🏆 I JUST WON THE HEIST!">
+<meta property="og:description" content="I survived the Bureaucracy in Bureaucracy Heist! Can you beat my score on Maximum Reality Arcade?">
+<meta property="og:image" content="https://maximumreality.github.io/khobz/max_real_bonus-bg.JPG">
+
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://maximumreality.github.io/winning.html">
+<meta property="twitter:title" content="🏆 I JUST WON THE HEIST!">
+<meta property="twitter:description" content="I survived the Bureaucracy in Bureaucracy Heist! Can you beat my score on Maximum Reality Arcade?">
+<meta property="twitter:image" content="https://maximumreality.github.io/khobz/max_real_bonus-bg.JPG">
+
+<meta name="theme-color" content="#1a1a2e">
+
   <title>Victory | Maximum Reality Arcade</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,7 +28,7 @@
       50% { box-shadow: 0 0 60px rgba(255, 215, 0, 0.6); }
     }
     
-    .certificate { animation: pulse-glow 3s ease-in-out infinite; transition: transform 0.1s ease-out; }
+    .certificate { animation: pulse-glow 3s ease-in-out infinite; transition: transform 0.1s ease-out; position: relative; z-index: 10; }
     .gold-border { background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c); background-size: 400% 400%; }
     .title-font { font-family: 'Cinzel Decorative', serif; }
     .body-font { font-family: 'Cormorant Garamond', serif; }
@@ -27,9 +41,26 @@
     
     .confetti-piece { position: fixed; pointer-events: none; z-index: 1000; }
     
-    /* Responsive sizing for iPhone 14 Pro Max */
+    /* Rick Positioning - Behind the buttons */
+    .rick-bg {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 180px; /* Adjusted size for iPhone visibility */
+      opacity: 0.8;
+      z-index: 5; /* Behind buttons (z-index 20) but above background */
+      pointer-events: none;
+    }
+
+    .button-container {
+      position: relative;
+      z-index: 20;
+    }
+    
     @media (max-width: 430px) {
       .certificate-container { transform: scale(0.9); }
+      .rick-bg { width: 140px; }
     }
   </style>
  </head>
@@ -45,18 +76,13 @@
    <div id="cert-wrapper" class="certificate-container w-full max-w-2xl perspective-1000">
      <div id="certificate" class="certificate gold-border p-1.5 rounded-lg shadow-2xl">
       <div class="bg-slate-900 rounded-md p-6 md:p-12 relative overflow-hidden">
-       
        <div class="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-amber-400 opacity-50"></div>
        <div class="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-amber-400 opacity-50"></div>
        
-       <div class="text-center mb-4"><span class="text-6xl inline-block hover:scale-110 transition-transform cursor-default">🏆</span></div>
-       
-       <h1 class="title-font text-2xl md:text-3xl text-center mb-6 text-amber-100 uppercase tracking-tighter">
-         Certificate of Achievement
-       </h1>
+       <div class="text-center mb-4"><span class="text-6xl inline-block hover:scale-110 transition-transform">🏆</span></div>
+       <h1 class="title-font text-2xl md:text-3xl text-center mb-6 text-amber-100 uppercase tracking-tighter">Certificate of Achievement</h1>
 
        <p class="body-font text-amber-200 text-xl text-center mb-2">This hereby certifies that</p>
-       
        <div class="flex justify-center mb-4">
          <input type="text" id="winner-name" class="name-input text-3xl md:text-4xl font-bold text-amber-400 w-full max-w-md py-1" placeholder="ENTER NAME" maxlength="25">
        </div>
@@ -70,7 +96,7 @@
             <p class="text-[10px] uppercase text-amber-600 tracking-widest">Date of Victory</p>
          </div>
          <div class="text-center">
-            <a href="https://maximumreality.github.io/maximum-reality-arcade/" class="body-font text-amber-100 text-sm underline decoration-amber-900">Maximum Reality</a>
+            <p class="body-font text-amber-100 text-sm">Maximum Reality</p>
             <p class="text-[10px] uppercase text-amber-600 tracking-widest">Official Record</p>
          </div>
        </div>
@@ -78,7 +104,9 @@
      </div>
    </div>
 
-   <div class="mt-10 flex flex-wrap justify-center gap-4">
+   <img src="rick.png" class="rick-bg" alt="Rick">
+
+   <div class="button-container mt-10 flex flex-wrap justify-center gap-4">
      <button id="celebrate-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 px-8 rounded-full shadow-lg transition-all active:scale-95 body-font text-lg">
        🎉 CELEBRATE
      </button>
@@ -87,7 +115,7 @@
      </button>
    </div>
 
-   <div class="mt-8">
+   <div class="mt-8 z-20">
      <a href="https://maximumreality.github.io/maximum-reality-arcade/" class="text-slate-500 hover:text-amber-500 text-xs tracking-[0.2em] title-font transition-colors">
        VISIT THE ARCADE
      </a>
@@ -101,10 +129,8 @@
     const cert = document.getElementById('certificate');
     const wrapper = document.getElementById('cert-wrapper');
 
-    // Date Logic
     dateDisplay.textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Confetti Logic
     function fireConfetti() {
       const colors = ['#f59e0b', '#fbbf24', '#ffffff', '#ef4444', '#3b82f6'];
       for (let i = 0; i < 60; i++) {
@@ -126,7 +152,6 @@
       }
     }
 
-    // Buttons
     document.getElementById('celebrate-btn').addEventListener('click', fireConfetti);
 
     document.getElementById('share-btn').addEventListener('click', async () => {
@@ -135,7 +160,7 @@
         try {
           await navigator.share({
             title: 'Victory in Bureaucracy Heist!',
-            text: `${name} just won! Check out the certificate on Maximum Reality Arcade.`,
+            text: `${name} just won! Check it out at Maximum Reality Arcade.`,
             url: window.location.href
           });
         } catch (err) { console.log("Share cancelled"); }
@@ -144,7 +169,6 @@
       }
     });
 
-    // iPhone Tilt Effect
     wrapper.addEventListener('mousemove', (e) => {
       const rect = wrapper.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -156,7 +180,6 @@
       cert.style.transform = 'rotateX(0deg) rotateY(0deg)';
     });
 
-    // Auto-fire on load
     setTimeout(fireConfetti, 800);
   </script>
  </body>
